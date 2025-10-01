@@ -157,6 +157,10 @@ function PDFViewer({ file }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    document.title = "Portofolio Caesar";
+  }, []);
+
   return (
     <div style={{
       width: "100%",
