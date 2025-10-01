@@ -41,7 +41,7 @@ const LoadingSpinner = () => (
       margin: 0,
       fontFamily: "system-ui, -apple-system, sans-serif"
     }}>
-      Memuat PDF...
+      Memuat...
     </p>
     <style>
       {`
@@ -135,10 +135,10 @@ function PDFViewer({ file }) {
               fontWeight: "600",
               marginBottom: "8px"
             }}>
-              Gagal memuat PDF
+              Gagal memuat
             </p>
             <p style={{ fontSize: "14px", color: "#666" }}>
-              Pastikan file PDF tersedia
+              Pastikan file tersedia
             </p>
           </div>
         }
