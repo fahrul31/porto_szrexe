@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { InView } from "react-intersection-observer";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -17,6 +17,7 @@ const workerBlob = new Blob(
 
 pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(workerBlob);
 
+// Komponen loading dengan animasi
 const LoadingSpinner = () => (
   <div style={{
     display: "flex",
@@ -40,7 +41,7 @@ const LoadingSpinner = () => (
       margin: 0,
       fontFamily: "system-ui, -apple-system, sans-serif"
     }}>
-      Memuat...
+      Memuat PDF...
     </p>
     <style>
       {`
@@ -78,11 +79,35 @@ const PagePlaceholder = () => (
 function PDFViewer({ file }) {
   const [numPages, setNumPages] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pageWidth, setPageWidth] = useState(800);
+
+  React.useEffect(() => {
+    const updateWidth = () => {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 640) {
+        // Mobile: padding 16px di setiap sisi
+        setPageWidth(screenWidth - 32);
+      } else if (screenWidth < 900) {
+        // Tablet: padding 24px di setiap sisi
+        setPageWidth(Math.min(screenWidth - 48, 800));
+      } else {
+        // Desktop: maksimal 800px
+        setPageWidth(800);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const handleLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     setIsLoading(false);
   };
+
+  // Hitung tinggi placeholder berdasarkan aspect ratio A4 (1.414)
+  const placeholderHeight = Math.round(pageWidth * 1.414);
 
   return (
     <div style={{
@@ -92,7 +117,7 @@ function PDFViewer({ file }) {
       flexDirection: "column",
       alignItems: "center",
       background: "#f8f9fa",
-      padding: "20px 0"
+      padding: window.innerWidth < 640 ? "12px 0" : "20px 0"
     }}>
       <Document
         file={file}
@@ -100,16 +125,20 @@ function PDFViewer({ file }) {
         loading={<LoadingSpinner />}
         error={
           <div style={{
-            padding: "40px",
+            padding: window.innerWidth < 640 ? "20px" : "40px",
             textAlign: "center",
             color: "#dc2626",
             fontFamily: "system-ui, -apple-system, sans-serif"
           }}>
-            <p style={{ fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>
-              Gagal memuat
+            <p style={{
+              fontSize: window.innerWidth < 640 ? "16px" : "18px",
+              fontWeight: "600",
+              marginBottom: "8px"
+            }}>
+              Gagal memuat PDF
             </p>
             <p style={{ fontSize: "14px", color: "#666" }}>
-              Pastikan file tersedia
+              Pastikan file PDF tersedia
             </p>
           </div>
         }
@@ -118,10 +147,11 @@ function PDFViewer({ file }) {
           <div
             key={i}
             style={{
-              marginBottom: "20px",
+              marginBottom: window.innerWidth < 640 ? "12px" : "20px",
               display: "flex",
               justifyContent: "center",
-              width: "100%"
+              width: "100%",
+              padding: "0 16px"
             }}
           >
             <InView triggerOnce rootMargin="300px">
@@ -130,21 +160,40 @@ function PDFViewer({ file }) {
                   ref={ref}
                   style={{
                     boxShadow: inView ? "0 4px 12px rgba(0,0,0,0.1)" : "none",
-                    borderRadius: "8px",
+                    borderRadius: window.innerWidth < 640 ? "4px" : "8px",
                     overflow: "hidden",
-                    transition: "box-shadow 0.3s ease"
+                    transition: "box-shadow 0.3s ease",
+                    maxWidth: "100%"
                   }}
                 >
                   {inView ? (
                     <Page
                       pageNumber={i + 1}
-                      width={800}
+                      width={pageWidth}
                       renderAnnotationLayer={false}
                       renderTextLayer={false}
-                      loading={<PagePlaceholder />}
+                      loading={
+                        <div style={{
+                          width: `${pageWidth}px`,
+                          height: `${placeholderHeight}px`,
+                          background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
+                          backgroundSize: "200% 100%",
+                          borderRadius: window.innerWidth < 640 ? "4px" : "8px",
+                          animation: "shimmer 1.5s infinite",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                        }} />
+                      }
                     />
                   ) : (
-                    <PagePlaceholder />
+                    <div style={{
+                      width: `${pageWidth}px`,
+                      height: `${placeholderHeight}px`,
+                      background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
+                      backgroundSize: "200% 100%",
+                      borderRadius: window.innerWidth < 640 ? "4px" : "8px",
+                      animation: "shimmer 1.5s infinite",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                    }} />
                   )}
                 </div>
               )}
@@ -160,7 +209,6 @@ export default function App() {
   useEffect(() => {
     document.title = "Portofolio Caesar";
   }, []);
-
   return (
     <div style={{
       width: "100%",
